@@ -102,7 +102,11 @@ async function getNewSession(retries: number = 0): Promise<ApiResponse> {
         if (retries < newSessionRetries) {
             return getNewSession(retries + 1);
         } else {
-            return handleErrorResponse(error);
+            let errorResponse = handleErrorResponse(error);
+            if (!errorResponse.error) {
+                errorResponse.error = "Error while getting session...";
+            }
+            return errorResponse;
         }
     }
 }
@@ -120,7 +124,11 @@ async function getCompletionWithOpenAi(
         apiResponse.statusCode = response.status;
         return apiResponse;
     } catch (error) {
-        return handleErrorResponse(error);
+        let errorResponse = handleErrorResponse(error);
+        if (!errorResponse.error) {
+            errorResponse.error = "Error while getting completions...";
+        }
+        return errorResponse;
     }
 }
 

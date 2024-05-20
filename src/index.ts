@@ -42,30 +42,19 @@ type ProofOfWork = {
     difficulty: string;
 };
 
-type Completion = {
-    id: string;
-    created: number;
+type ConversationRequest = {
     model: string;
-    object: string;
-    choices: Choice[];
-    usage: Usage;
+    messages: ConversationMessage[];
 };
 
-type Choice = {
-    finish_reason: string;
-    index: number;
-    message: Message;
-};
-
-type Message = {
-    content: string;
+type ConversationMessage = {
     role: string;
+    content: string;
 };
 
-type Usage = {
-    prompt_tokens: number;
-    completion_tokens: number;
-    total_tokens: number;
+type CompletionRequest = {
+    session: Session;
+    conversation: ConversationRequest;
 };
 
 const axiosInstance = axios.create();
@@ -118,10 +107,15 @@ async function getNewSession(retries: number = 0): Promise<ApiResponse> {
     }
 }
 
-async function getCompletionWithOpenAi(session: Session): Promise<ApiResponse> {
-    if (!session) return handleErrorResponse(null);
+async function getCompletionWithOpenAi(
+    completionRequest: CompletionRequest
+): Promise<ApiResponse> {
+    if (!completionRequest.session) return handleErrorResponse(null);
     try {
-        const response = await axiosInstance.post(completionUrl, session);
+        const response = await axiosInstance.post(
+            completionUrl,
+            completionRequest
+        );
         let apiResponse = response.data as ApiResponse;
         apiResponse.statusCode = response.status;
         return apiResponse;
@@ -135,7 +129,7 @@ function handleDefault(_: Request, res: Response) {
     return res.end();
 }
 
-async function handleChatCompletion(_: Request, res: Response) {
+async function handleChatCompletion(req: Request, res: Response) {
     const sessionResponse = await getNewSession();
     if (!sessionResponse.status) {
         res.status(sessionResponse.statusCode).json(sessionResponse);
@@ -143,7 +137,12 @@ async function handleChatCompletion(_: Request, res: Response) {
     }
 
     const session = sessionResponse.data;
-    const completionResponse = await getCompletionWithOpenAi(session);
+    const conversationRequest: ConversationRequest = req.body;
+    const completionRequest: CompletionRequest = {
+        session: session,
+        conversation: conversationRequest,
+    };
+    const completionResponse = await getCompletionWithOpenAi(completionRequest);
     res.status(completionResponse.statusCode).json(completionResponse);
 }
 
@@ -152,7 +151,7 @@ app.use(bodyParser.json());
 app.use(enableCORS);
 
 app.get("/", handleDefault);
-app.post("/v1/chat/completions", handleChatCompletion);
+app.post("/v1/conversation", handleChatCompletion);
 
 app.use((req, res) =>
     res.status(404).send({

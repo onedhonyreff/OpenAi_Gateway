@@ -129,7 +129,7 @@ function handleDefault(_: Request, res: Response) {
     return res.end();
 }
 
-async function handleChatCompletion(req: Request, res: Response) {
+async function handleConversation(req: Request, res: Response) {
     const sessionResponse = await getNewSession();
     if (!sessionResponse.status) {
         res.status(sessionResponse.statusCode).json(sessionResponse);
@@ -151,7 +151,7 @@ app.use(bodyParser.json());
 app.use(enableCORS);
 
 app.get("/", handleDefault);
-app.post("/v1/conversation", handleChatCompletion);
+app.post("/v1/conversation", handleConversation);
 
 app.use((req, res) =>
     res.status(404).send({

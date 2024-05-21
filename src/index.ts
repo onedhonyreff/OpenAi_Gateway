@@ -7,7 +7,7 @@ config();
 
 const port = process.env.PORT ?? "8000";
 const sessionUrl = `${process.env.SESSION_SERVICE_HOST}/v1/new-openai-session`;
-const completionUrl = `${process.env.CHAT_COMPLETION_SERVICE_HOST}/v1/chat-completion`;
+const completionUrl = `${process.env.CHAT_COMPLETION_SERVICE_HOST}/v1/generate-conversation`;
 
 const newSessionRetries: number = 100;
 
@@ -159,7 +159,7 @@ app.use(bodyParser.json());
 app.use(enableCORS);
 
 app.get("/", handleDefault);
-app.post("/v1/conversation", handleConversation);
+app.post("/v1/chat/completions", handleConversation);
 
 app.use((req, res) =>
     res.status(404).send({
